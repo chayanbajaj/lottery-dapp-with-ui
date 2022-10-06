@@ -10,15 +10,26 @@ export default function Home() {
   const [address, setAddress] = useState()
   const [lcContract, setLcContract] = useState()
   const [lotteryPot, setLotteryPot] = useState()
+  const [players, setPlayers] = useState([])
 
   useEffect(()=> {
-    if(lcContract) getPot()
-  },[lcContract, lotteryPot])
+    if(lcContract) 
+    {
+      getPot();
+      getPlayers();
+    }
+  },[lcContract, lotteryPot, players])
 
   const getPot = async () => {
     const pot = await lcContract.methods.getBalance().call();
     setLotteryPot(pot);
   }
+
+  const getPlayers = async () => {
+    const players = await lcContract.methods.getPlayers().call();
+    setPlayers(players);
+  }
+
   const connectWalletHandler = async () => {
     // Check if we are in a browser environment && Check if MetaMask is installed
     if(typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
@@ -100,8 +111,11 @@ export default function Home() {
                 <div className='card-content'>
                   <div className='content'>
                     <h2> Player (1) </h2>
+                    
                     <div> 
-                      <a href="https://etherscan.io" target="_blank"> Winner Address </a>
+                    {players.map((player) => {
+                      <a href={`https://etherscan.io/address/${player}`} target="_blank"> {player} </a>
+                    })}
                     </div>
                   </div>
                 </div>
