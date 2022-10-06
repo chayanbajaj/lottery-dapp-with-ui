@@ -11,6 +11,7 @@ export default function Home() {
   const [lcContract, setLcContract] = useState()
   const [lotteryPot, setLotteryPot] = useState()
   const [lotteryPlayers, setPlayers] = useState([])
+  const [error, setError] = useState([])
 
   useEffect(()=> {
     if(lcContract) 
@@ -39,11 +40,12 @@ export default function Home() {
         gasPrice: null,
       })
     } catch (err) {
-      console.log(err.message)
+      setError(err.message)
     }
   }
 
   const connectWalletHandler = async () => {
+    setError([]);
     // Check if we are in a browser environment && Check if MetaMask is installed
     if(typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
       try {
@@ -101,6 +103,11 @@ export default function Home() {
                 <p> <b> Admin Only </b>: Pick Winner</p>  
                 <button className='button is-primary is-large is-light mt-3'> Pick Winner </button>
               </section> 
+              <section>
+                <div className='container has-text-danger mt-6'>
+                  <p> {error} </p>
+                </div>
+              </section>
             </div>
             <div className={`${styles.lotteryinfo}column is-one-third`}>
               <section className='mt-5'>
