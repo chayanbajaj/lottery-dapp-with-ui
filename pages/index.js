@@ -1,12 +1,14 @@
 import Head from 'next/head'
 import { useState } from 'react'
 import Web3 from 'web3'
+import lotteryContract from '../blockchain/lottery'
 import styles from '../styles/Home.module.css'
 import 'bulma/css/bulma.css'
 
 export default function Home() {
   const [web3, setWeb3] = useState()
   const [address, setAddress] = useState()
+  const [lcContract, setLcContract] = useState()
   const connectWalletHandler = async () => {
     // Check if we are in a browser environment && Check if MetaMask is installed
     if(typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
@@ -22,6 +24,10 @@ export default function Home() {
         // Set account 1 to React State
         setAddress(accounts[0])
         console.log(address)
+
+        // Create local contract copy 
+        const lc = lotteryContract(web3)
+        setLcContract(lc)
       } catch (err) {
         console.log(err.message);
       }
