@@ -10,7 +10,7 @@ export default function Home() {
   const [address, setAddress] = useState()
   const [lcContract, setLcContract] = useState()
   const [lotteryPot, setLotteryPot] = useState()
-  const [players, setPlayers] = useState([])
+  const [lotteryPlayers, setPlayers] = useState([])
 
   useEffect(()=> {
     if(lcContract) 
@@ -18,16 +18,29 @@ export default function Home() {
       getPot();
       getPlayers();
     }
-  },[lcContract, lotteryPot, players])
+  },[lcContract, lotteryPot, lotteryPlayers])
 
   const getPot = async () => {
     const pot = await lcContract.methods.getBalance().call();
-    setLotteryPot(pot);
+    setLotteryPot(web3.utils.fromWei(pot, 'ether'));
   }
 
   const getPlayers = async () => {
     const players = await lcContract.methods.getPlayers().call();
     setPlayers(players);
+  }
+
+  const enterLotteryHandler = async () => {
+    try {
+      await lcContract.methods.enter().send({
+        from: address,
+        value: '15000000000000000',
+        gas: 300000,
+        gasPrice: null,
+      })
+    } catch (err) {
+      console.log(err.message)
+    }
   }
 
   const connectWalletHandler = async () => {
@@ -81,8 +94,8 @@ export default function Home() {
             <div className='columns'>
             <div className='column is-two-third'> 
               <section className='mt-5'>
-                <p> Enter the lottery by sending 0.01 Ether </p>  
-                <button className='button is-link is-large is-light mt-3'> Play Now </button>
+                <p> Enter the lottery by sending 0.015 Ether </p>  
+                <button onClick = {enterLotteryHandler} className='button is-link is-large is-light mt-3'> Play Now </button>
               </section> 
               <section className='mt-6'>
                 <p> <b> Admin Only </b>: Pick Winner</p>  
@@ -110,13 +123,18 @@ export default function Home() {
               <div className='card'>
                 <div className='card-content'>
                   <div className='content'>
-                    <h2> Player (1) </h2>
-                    
-                    <div> 
-                    {players.map((player) => {
-                      <a href={`https://etherscan.io/address/${player}`} target="_blank"> {player} </a>
-                    })}
-                    </div>
+                    <h2> Player ({lotteryPlayers.length}) </h2>
+                    <ul className="ml-0">
+                          {
+                            (lotteryPlayers && lotteryPlayers.length > 0) && lotteryPlayers.map((player, index) => {
+                              return <li key={`${player}-${index}`}>
+                                <a href={`https://etherscan.io/address/${player}`} target="_blank">
+                                  {player}
+                                </a>
+                              </li>
+                            })
+                          }
+                        </ul>
                   </div>
                 </div>
               </div>
@@ -126,7 +144,7 @@ export default function Home() {
                 <div className='card-content'>
                   <div className='content'>
                     <h2> Pot </h2>
-                    <p> {lotteryPot} </p>
+                    <p> {lotteryPot} Ether </p>
                   </div>
                 </div>
               </div>
