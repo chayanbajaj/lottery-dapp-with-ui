@@ -1,5 +1,5 @@
 import Head from 'next/head'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Web3 from 'web3'
 import lotteryContract from '../blockchain/lottery'
 import styles from '../styles/Home.module.css'
@@ -9,6 +9,16 @@ export default function Home() {
   const [web3, setWeb3] = useState()
   const [address, setAddress] = useState()
   const [lcContract, setLcContract] = useState()
+  const [lotteryPot, setLotteryPot] = useState()
+
+  useEffect(()=> {
+    if(lcContract) getPot()
+  },[lcContract, lotteryPot])
+
+  const getPot = async () => {
+    const pot = await lcContract.methods.getBalance().call();
+    setLotteryPot(pot);
+  }
   const connectWalletHandler = async () => {
     // Check if we are in a browser environment && Check if MetaMask is installed
     if(typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
@@ -102,7 +112,7 @@ export default function Home() {
                 <div className='card-content'>
                   <div className='content'>
                     <h2> Pot </h2>
-                    <p> 10 Ether </p>
+                    <p> {lotteryPot} </p>
                   </div>
                 </div>
               </div>
