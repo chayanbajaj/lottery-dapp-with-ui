@@ -11,7 +11,7 @@ export default function Home() {
   const [lcContract, setLcContract] = useState()
   const [lotteryPot, setLotteryPot] = useState()
   const [lotteryPlayers, setPlayers] = useState([])
-  const [lotteryHistory, setLotteryHistory] = useState()
+  const [lotteryHistory, setLotteryHistory] = useState([])
   const [lotteryId, setLotteryId] = useState()
   const [error, setError] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
@@ -36,8 +36,13 @@ export default function Home() {
   }
 
   const getHistory = async() => {
-    const history = await lcContract.methods.lotteryHistory().call();
-    setLotteryHistory(history)
+    for(let i = parseInt(lotteryId); i > 0; i--) {
+      const winnerAddress = await lcContract.methods.lotteryHistory(i).call();
+      const historyObj = {}
+      historyObj.id = i;
+      historyObj.address = winnerAddress;
+      setLotteryHistory(lotteryHistory => [...lotteryHistory, historyObjs])
+    }
   }
 
   const getLotteryId = async() => {
