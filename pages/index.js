@@ -11,13 +11,17 @@ export default function Home() {
   const [lcContract, setLcContract] = useState()
   const [lotteryPot, setLotteryPot] = useState()
   const [lotteryPlayers, setPlayers] = useState([])
-  const [error, setError] = useState([])
+  const [lotteryHistory, setLotteryHistory] = useState()
+  const [lotteryId, setLotteryId] = useState()
+  const [error, setError] = useState('')
+  const [successMsg, setSuccessMsg] = useState('')
 
   useEffect(()=> {
     if(lcContract) 
     {
       getPot();
       getPlayers();
+      getLotteryId();
     }
   },[lcContract, lotteryPot, lotteryPlayers])
 
@@ -31,11 +35,34 @@ export default function Home() {
     setPlayers(players);
   }
 
+  const getHistory = async() => {
+    const history = await lcContract.methods.lotteryHistory().call();
+    setLotteryHistory(history)
+  }
+
+  const getLotteryId = async() => {
+    const lotteryId = await lcContract.methods.lotteryId().call();
+    console.log(lotteryId)
+    setLotteryId(lotteryId)
+  }
+
   const enterLotteryHandler = async () => {
     try {
       await lcContract.methods.enter().send({
         from: address,
         value: '15000000000000000',
+        gas: 300000,
+        gasPrice: null,
+      })
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const pickWinnerHandler = async () => {
+    try {
+      await lcContract.methods.payWinner().send({
+        from: address,
         gas: 300000,
         gasPrice: null,
       })
@@ -101,7 +128,7 @@ export default function Home() {
               </section> 
               <section className='mt-6'>
                 <p> <b> Admin Only </b>: Pick Winner</p>  
-                <button className='button is-primary is-large is-light mt-3'> Pick Winner </button>
+                  <button onClick={pickWinnerHandler} className='button is-primary is-large is-light mt-3'> Pick Winner </button>
               </section> 
               <section>
                 <div className='container has-text-danger mt-6'>
