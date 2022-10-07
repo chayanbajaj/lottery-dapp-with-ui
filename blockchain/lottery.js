@@ -8,3 +8,13 @@ const lotteryContract = web3 => {
 }
 
 export default lotteryContract;
+
+//Add 10 Links to this address so that PayWinner can work
+
+// Copy Wallet Address from Metamask
+// Go to faucets.chain.link paste the wallet address and get 10 test LINK
+// Then go to:
+// 	docs.chain.link/link-token-contracts
+// 	Then get the address of the Test Net you are on.
+// Go to Assets Tab and import tokens and add custom tokens in Metamask
+// Go to lottery.js and fetch the address, then Go to Metamask and send 10 LINKs to it
