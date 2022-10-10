@@ -16,70 +16,97 @@ export default function Home() {
   const [error, setError] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
 
-  useEffect(()=> {
-    if(lcContract) 
-    {
-      getPot();
-      getPlayers();
-      getLotteryId();
-    }
-  },[lcContract, lotteryPot, lotteryPlayers])
+  useEffect(() => {
+    updateState()
+  }, [lcContract])
+
+  const updateState = () => {
+    if (lcContract) getPot()
+    if (lcContract) getPlayers()
+    if (lcContract) getLotteryId()
+  }
 
   const getPot = async () => {
-    const pot = await lcContract.methods.getBalance().call();
-    setLotteryPot(web3.utils.fromWei(pot, 'ether'));
+    const pot = await lcContract.methods.getBalance().call()
+    setLotteryPot(web3.utils.fromWei(pot, 'ether'))
   }
 
   const getPlayers = async () => {
-    const players = await lcContract.methods.getPlayers().call();
-    setPlayers(players);
+    const players = await lcContract.methods.getPlayers().call()
+    setPlayers(players)
   }
 
-  const getHistory = async() => {
-    for(let i = parseInt(lotteryId); i > 0; i--) {
-      const winnerAddress = await lcContract.methods.lotteryHistory(i).call();
+  const getHistory = async (id) => {
+    setLotteryHistory([])
+    for (let i = parseInt(id); i > 0; i--) {
+      const winnerAddress = await lcContract.methods.lotteryHistory(i).call()
       const historyObj = {}
-      historyObj.id = i;
-      historyObj.address = winnerAddress;
-      setLotteryHistory(lotteryHistory => [...lotteryHistory, historyObjs])
+      historyObj.id = i
+      historyObj.address = winnerAddress
+      setLotteryHistory(lotteryHistory => [...lotteryHistory, historyObj])
     }
   }
 
-  const getLotteryId = async() => {
-    const lotteryId = await lcContract.methods.lotteryId().call();
-    console.log(lotteryId)
+  const getLotteryId = async () => {
+    const lotteryId = await lcContract.methods.lotteryId().call()
     setLotteryId(lotteryId)
+    await getHistory(lotteryId)
   }
 
   const enterLotteryHandler = async () => {
+    setError('')
+    setSuccessMsg('')
     try {
       await lcContract.methods.enter().send({
         from: address,
         value: '15000000000000000',
         gas: 300000,
-        gasPrice: null,
+        gasPrice: null
       })
-    } catch (err) {
+      updateState()
+    } catch(err) {
       setError(err.message)
     }
   }
 
   const pickWinnerHandler = async () => {
+    setError('')
+    setSuccessMsg('')
+    console.log(`address from pick winner :: ${address}`)
+    try {
+      await lcContract.methods.pickWinner().send({
+        from: address,
+        gas: 300000,
+        gasPrice: null
+      })
+    } catch(err) {
+      setError(err.message)
+    }
+  }
+
+  const payWinnerHandler = async () => {
+    setError('')
+    setSuccessMsg('')
     try {
       await lcContract.methods.payWinner().send({
         from: address,
         gas: 300000,
-        gasPrice: null,
+        gasPrice: null
       })
-    } catch (err) {
+      console.log(`lottery id :: ${lotteryId}`)
+      const winnerAddress = await lcContract.methods.lotteryHistory(lotteryId).call()
+      setSuccessMsg(`The winner is ${winnerAddress}`)
+      updateState()
+    } catch(err) {
       setError(err.message)
     }
   }
 
   const connectWalletHandler = async () => {
-    setError([]);
-    // Check if we are in a browser environment && Check if MetaMask is installed
-    if(typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
+    setError('')
+    setSuccessMsg('')
+    /* check if MetaMask is installed */
+    if (typeof window !== "undefined" && typeof window.ethereum !== "undefined") {
       try {
         // Request Wallet Connection
         await window.ethereum.request({ method: "eth_requestAccounts"})
@@ -91,17 +118,25 @@ export default function Home() {
         const accounts = await web3.eth.getAccounts()
         // Set account 1 to React State
         setAddress(accounts[0])
-        console.log(address)
+        
 
         // Create local contract copy 
         const lc = lotteryContract(web3)
         setLcContract(lc)
-      } catch (err) {
-        console.log(err.message);
+
+        window.ethereum.on('accountsChanged', async () => {
+          const accounts = await web3.eth.getAccounts()
+          console.log(accounts[0])
+          /* set account 1 to React state */
+          setAddress(accounts[0])
+        })
+      } catch(err) {
+        setError(err.message)
       }
 
     } else {
-      console.log("Please Install Metamask!")
+      /* MetaMask is not installed */
+      console.log("Please install MetaMask")
     }
   }
   return (
@@ -121,49 +156,65 @@ export default function Home() {
             <div className='navbar-end'>
               <button className='button is-link' onClick={connectWalletHandler}> Connect Wallet </button>
             </div>
-          </div>  
-        </nav> 
-        <div className='container'>
-          <section className='mt-5'>
-            <div className='columns'>
-            <div className='column is-two-third'> 
-              <section className='mt-5'>
-                <p> Enter the lottery by sending 0.015 Ether </p>  
-                <button onClick = {enterLotteryHandler} className='button is-link is-large is-light mt-3'> Play Now </button>
-              </section> 
-              <section className='mt-6'>
-                <p> <b> Admin Only </b>: Pick Winner</p>  
-                  <button onClick={pickWinnerHandler} className='button is-primary is-large is-light mt-3'> Pick Winner </button>
-              </section> 
-              <section>
-                <div className='container has-text-danger mt-6'>
-                  <p> {error} </p>
-                </div>
-              </section>
-            </div>
-            <div className={`${styles.lotteryinfo}column is-one-third`}>
-              <section className='mt-5'>
-              <div className='card'>
-                <div className='card-content'>
-                  <div className='content'>
-                    <h2> Lottery History </h2>
-                    <div className='history-entry'>
-                      <div> Lottery Winner #1: 
-                        <div> 
-                          <a href="https://etherscan.io" target="_blank"> Winner Address </a>
-                        </div>
+          </div>
+        </nav>
+        <div className="container">
+          <section className="mt-5">
+            <div className="columns">
+              <div className="column is-two-thirds">
+                <section className="mt-5">
+                  <p>Enter the lottery by sending 0.01 Ether</p>
+                  <button onClick={enterLotteryHandler} className="button is-link is-large is-light mt-3">Play now</button>
+                </section>
+                <section className="mt-6">
+                  <p><b>Admin only:</b> Pick winner</p>
+                  <button onClick={pickWinnerHandler} className="button is-primary is-large is-light mt-3">Pick Winner</button>
+                </section>
+                <section className="mt-6">
+                  <p><b>Admin only:</b> Pay winner</p>
+                  <button onClick={payWinnerHandler} className="button is-success is-large is-light mt-3">Pay Winner</button>
+                </section>
+                <section>
+                  <div className="container has-text-danger mt-6">
+                    <p>{error}</p>
+                  </div>
+                </section>
+                <section>
+                  <div className="container has-text-success mt-6">
+                    <p>{successMsg}</p>
+                  </div>
+                </section>
+              </div>
+              <div className={`${styles.lotteryinfo} column is-one-third`}>
+                <section className="mt-5">
+                  <div className="card">
+                    <div className="card-content">
+                      <div className="content">
+                        <h2>Lottery History</h2>
+                        {
+                          (lotteryHistory && lotteryHistory.length > 0) && lotteryHistory.map(item => {
+                            if (lotteryId != item.id) {
+                              return <div className="history-entry mt-3" key={item.id}>
+                                <div>Lottery #{item.id} winner:</div>
+                                <div>
+                                  <a href={`https://etherscan.io/address/${item.address}`} target="_blank">
+                                    {item.address}
+                                  </a>
+                                </div>
+                              </div>
+                            }
+                          })
+                        }
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-              </section>
-              <section className='mt-5'>
-              <div className='card'>
-                <div className='card-content'>
-                  <div className='content'>
-                    <h2> Player ({lotteryPlayers.length}) </h2>
-                    <ul className="ml-0">
+                </section>
+                <section className="mt-5">
+                  <div className="card">
+                    <div className="card-content">
+                      <div className="content">
+                        <h2>Players ({lotteryPlayers.length})</h2>
+                        <ul className="ml-0">
                           {
                             (lotteryPlayers && lotteryPlayers.length > 0) && lotteryPlayers.map((player, index) => {
                               return <li key={`${player}-${index}`}>
